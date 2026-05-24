@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# User data — never publish
+DawahDeskData/
+
+# Credentials — never publish
+secrets/
+*.env
+*.env.local
+
+# Migration markers — instance specific
+server/data/*.migrated
+server/data/ops.migrated/
+server/data/backups.migrated/
+
+# Runtime data — lives in DawahDeskData, not repo
+server/data/runtime-state.json
+server/data/ops/
+server/data/backups/
+
+# Internal development documents
+DECISIONS.md
+DawahDesk-ProjectPlan.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Claude Code — machine-specific settings
+.claude/

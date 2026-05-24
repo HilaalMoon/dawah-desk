@@ -1,0 +1,17 @@
+# .claudeignore
+# These paths contain user-generated data and credentials.
+# Claude Code must not read, modify, delete, or overwrite these files.
+
+# NOTE — user data location changed in Phase 1 (Data Separation).
+# User data now lives in a dynamic per-user folder: %USERPROFILE%\DawahDeskData\
+# (e.g. C:\Users\hatem\DawahDeskData\)
+# This path cannot be listed here because it varies by machine and user account.
+# The entries below cover only the legacy server/data/ location, which will contain
+# .migrated marker files after first run. Do not delete those files.
+server/data/runtime-state.json
+server/data/runtime-state.json.migrated
+server/data/ops/
+server/data/ops.migrated/
+server/data/backups/
+server/data/backups.migrated/
+secrets/

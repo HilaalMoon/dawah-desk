@@ -1,0 +1,42 @@
+Da'wah Desk — Installation Guide
+==================================
+
+Before you start
+----------------
+- Make sure your computer is connected to the internet.
+- Make sure you have the credential file from your system administrator.
+
+
+Step 1 — Install Node.js (first time only)
+-------------------------------------------
+Go to https://nodejs.org and download and install the latest version.
+
+If you are not sure whether Node.js is already installed, skip this step.
+The installer will tell you if it is missing.
+
+
+Step 2 — Run the installer
+---------------------------
+Double-click DawahDesk_install.bat in the Da'wah Desk folder.
+
+A black window will appear and show you its progress.
+Leave it running — it will close on its own when finished.
+
+
+Step 3 — Enter your credentials
+---------------------------------
+Da'wah Desk will open in your browser and ask you to paste in the credential file.
+
+Paste the full contents of the file your system administrator sent you,
+then click Save and open Da'wah Desk.
+
+
+Step 4 — You are ready
+------------------------
+Da'wah Desk is now installed and running.
+A shortcut called "Dawah Desk" has been added to your desktop for next time.
+
+
+To start Da'wah Desk in future
+--------------------------------
+Double-click the Dawah Desk shortcut on your desktop.
