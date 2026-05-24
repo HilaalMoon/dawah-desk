@@ -113,6 +113,59 @@ If data appears missing:
 - Vertex AI currently depends on local service-account credential wiring through the launcher
 - translation now depends entirely on the active AI provider/model and no longer has a separate Google Translate fallback path
 
+## GitHub Release Process
+
+### Repository
+`https://github.com/HilaalMoon/dawah-desk`
+
+### How to create a new release
+
+**1. Bump the version in `package.json`**
+
+Open `package.json` and update the `version` field:
+```json
+"version": "1.3.0"
+```
+
+**2. Commit the version bump**
+
+```powershell
+git add package.json
+git commit -m "Da'wah Desk v1.3.0 — release"
+git push origin main
+```
+
+**3. Create and push an annotated tag**
+
+```powershell
+git tag -a v1.3.0 -m "Da'wah Desk v1.3.0 — <short description>"
+git push origin v1.3.0
+```
+
+**4. Create the GitHub Release**
+
+1. Go to `https://github.com/HilaalMoon/dawah-desk/releases`
+2. Click **Draft a new release**
+3. Under **Choose a tag**, select the tag you just pushed (e.g. `v1.3.0`)
+4. Set the release title to `Da'wah Desk v1.3.0`
+5. Write release notes summarising what changed
+6. Click **Publish release**
+
+GitHub automatically generates a source zip from the tag. No manual zip step is needed.
+
+**5. Download the zip for distribution**
+
+On the release page, under **Assets**, GitHub provides:
+- `Source code (zip)` — this is the file to send to users
+
+Download it, verify it extracts cleanly, then distribute it.
+
+**What users do with the zip**
+
+Users unzip the file, open the extracted folder, and double-click `DawahDesk_install.bat`. The installer handles `npm install`, building the frontend, and creating the desktop shortcut. No manual setup steps are required beyond running the installer.
+
+---
+
 ## Future Documentation Recommendation
 When V1 is used in production for a while, add:
 - a release history file
