@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { updateRuntimeState } from "./store.js";
 
 const credentialsFile = path.join(os.homedir(), "DawahDeskData", "credentials.json");
 
@@ -186,6 +187,21 @@ export const saveVertexCredentialJson = async (jsonContent) => {
     VERTEX_AI_SERVICE_ACCOUNT_PATH: credentialJsonPath,
     GOOGLE_APPLICATION_CREDENTIALS: credentialJsonPath,
   });
+
+  // Update the vertex-ai provider's projectId in runtime state from the pasted JSON.
+  const projectId = parsed.project_id;
+  if (projectId) {
+    await updateRuntimeState((currentState) => {
+      const providers = currentState.aiProviders ?? [];
+      if (!providers.some((p) => p.providerType === "vertex-ai")) return currentState;
+      return {
+        ...currentState,
+        aiProviders: providers.map((p) =>
+          p.providerType === "vertex-ai" ? { ...p, projectId } : p,
+        ),
+      };
+    }, { operation: { type: "provider-update", recordedAt: new Date().toISOString() } });
+  }
 
   return credentialJsonPath;
 };

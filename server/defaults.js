@@ -103,7 +103,7 @@ export const defaultAiProviders = [
     enabled: true,
     baseUrl: "https://aiplatform.googleapis.com",
     apiKeyRef: "VERTEX_AI_SERVICE_ACCOUNT_PATH",
-    projectId: "hm-so2021",
+    projectId: "",
     location: "global",
       modelOptions: [
         {
@@ -141,7 +141,7 @@ export const defaultAiProviders = [
       ],
     defaultModelId: "gemini-2.5-flash",
     headers: {},
-    notes: "Server-side Vertex AI provider using service account authentication for project hm-so2021. Uses the global model endpoint because current Gemini model availability is broader there than in me-central1.",
+    notes: "Server-side Vertex AI provider using service account authentication. Project ID is read from the saved credential file. Uses the global model endpoint because current Gemini model availability is broader there than in me-central1.",
     createdAt: nowIso,
     updatedAt: nowIso,
   },

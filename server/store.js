@@ -304,6 +304,60 @@ const phase4ConnectorCleanupIfNeeded = async () => {
   await writeFile(phase4ConnectorCleanupMarker, "", "utf8");
 };
 
+// TEMPORARY — one-time fix for Phase 7 hardcoded project ID bug
+// Reads project_id from vertex-service-account.json and updates the vertex-ai provider
+// in runtime state if it still carries "hm-so2021" or an empty projectId.
+// Safe to remove once all users have migrated.
+
+const phase7ProjectIdFixMarker = path.join(userDataDir, "phase7-project-id-fix.migrated");
+const vertexServiceAccountFile = path.join(userDataDir, "vertex-service-account.json");
+
+const phase7ProjectIdFixIfNeeded = async () => {
+  if (existsSync(phase7ProjectIdFixMarker)) return;
+
+  let vertexSa;
+  try {
+    vertexSa = JSON.parse(await readFile(vertexServiceAccountFile, "utf8"));
+  } catch {
+    // No credential file present — nothing to fix.
+    await writeFile(phase7ProjectIdFixMarker, "", "utf8");
+    return;
+  }
+
+  const projectId = vertexSa.project_id;
+  if (!projectId) {
+    await writeFile(phase7ProjectIdFixMarker, "", "utf8");
+    return;
+  }
+
+  let rawState;
+  try {
+    rawState = JSON.parse(await readFile(stateFile, "utf8"));
+  } catch {
+    // State file doesn't exist yet — nothing to fix.
+    await writeFile(phase7ProjectIdFixMarker, "", "utf8");
+    return;
+  }
+
+  const providers = rawState.aiProviders ?? [];
+  const needsFix = providers.some(
+    (p) => p.providerType === "vertex-ai" && (!p.projectId || p.projectId === "hm-so2021"),
+  );
+
+  if (needsFix) {
+    const updated = {
+      ...rawState,
+      aiProviders: providers.map((p) =>
+        p.providerType === "vertex-ai" ? { ...p, projectId } : p,
+      ),
+    };
+    await withRetry(() => writeFile(stateFile, JSON.stringify(updated, null, 2), "utf8"));
+    console.log("[Da'wah Desk] Vertex AI project ID updated from credential file.");
+  }
+
+  await writeFile(phase7ProjectIdFixMarker, "", "utf8");
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Starter library seeding — runs once on first launch when savedCases is empty.
 
@@ -394,6 +448,7 @@ export const ensureRuntimeState = async () => {
   await migrateDataIfNeeded();
   await removeDeletedProvidersIfNeeded();
   await phase4ConnectorCleanupIfNeeded();
+  await phase7ProjectIdFixIfNeeded();
   await loadStarterLibraryIfNeeded();
   try {
     await readFile(stateFile, "utf8");
