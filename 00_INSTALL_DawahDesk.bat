@@ -39,7 +39,7 @@ echo Node.js found.
 echo.
 
 REM -- Step 2: Install components -------------------------------------------
-echo Installing Dawah Desk components -- this may take a minute...
+echo Installing components... this may take 1-2 minutes. Please wait. > CON
 echo.
 cmd /c "npm.cmd install --no-audit"
 if errorlevel 1 (
@@ -52,14 +52,14 @@ if errorlevel 1 (
     exit /b 1
 )
 echo.
-echo Components installed successfully.
+echo Installation complete. > CON
 echo.
 
 REM -- Step 3: Create desktop shortcut --------------------------------------
 echo Creating desktop shortcut...
 
 set "REPO_DIR=%CD%"
-set "LAUNCHER=%REPO_DIR%\_CCode_run-dawah-desk.bat"
+set "LAUNCHER=%REPO_DIR%\run-dawah-desk.bat"
 set "ICO=%REPO_DIR%\Logos\Dawa-Desk-Logo-03.ico"
 set "SHORTCUT=%USERPROFILE%\Desktop\DawahDesk.lnk"
 set "PS_TEMP=%TEMP%\dawah-desk-shortcut.ps1"
@@ -86,7 +86,7 @@ if %PS_EXIT% neq 0 (
     echo.
     echo  Note: Could not create the desktop shortcut automatically.
     echo  You can still start Dawah Desk by opening:
-    echo    _CCode_run-dawah-desk.bat
+    echo    run-dawah-desk.bat
     echo.
     pause
 ) else (

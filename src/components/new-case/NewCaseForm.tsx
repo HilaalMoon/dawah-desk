@@ -13,6 +13,7 @@ type NewCaseFormProps = {
   difficultyOptions: string[];
   likelyIntentOptions: string[];
   isClassifying: boolean;
+  classificationError?: string | null;
   onDraftChange: (field: keyof CaseDraftInput, value: string) => void;
   onClassificationChange: (field: keyof CaseClassification, value: string) => void;
   onRunClassification: () => void;
@@ -39,6 +40,7 @@ export const NewCaseForm = ({
   difficultyOptions,
   likelyIntentOptions,
   isClassifying,
+  classificationError,
   onDraftChange,
   onClassificationChange,
   onRunClassification,
@@ -127,6 +129,10 @@ export const NewCaseForm = ({
             </button>
           }
         />
+
+        {classificationError ? (
+          <p className="mb-4 text-sm text-red-600">{classificationError}</p>
+        ) : null}
 
         <div className="space-y-4">
           {fields.map((field) => (

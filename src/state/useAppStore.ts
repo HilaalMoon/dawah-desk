@@ -628,33 +628,38 @@ export const useAppStore = create<AppState>()(
     if (!draft.question.trim()) return;
 
     set({ isClassifying: true, isLoadingSimilar: true });
-    const [classification, backendMatches, settings] = await Promise.all([
-      backendApi.classifyCase(draft),
-      backendApi.findSimilarCases(draft),
-      backendApi.getSettings().catch(() => null),
-    ]);
-    const lists = getClassificationLists(settings);
-    const normalizedClassification = normalizeClassificationToOptions(
-      classification,
-      lists.topics,
-      lists.audience,
-      lists.questions,
-      lists.difficulties,
-      lists.intents,
-    );
-    const localMatches = buildLocalSimilarMatches(draft, get().savedCases.filter((item) => item.status === "saved"), get().savedBites);
-    const matches = backendMatches.length > 0 ? backendMatches : localMatches;
-    set((state) => ({
-      classificationDraft: normalizedClassification,
-      similarMatches: matches,
-      isClassifying: false,
-      isLoadingSimilar: false,
-      draftForm: {
-        ...state.draftForm,
-        caseName:
-          state.draftForm.caseName?.trim() || mockAiService.suggestCaseName(state.draftForm, classification),
-      },
-    }));
+    try {
+      const [classification, backendMatches, settings] = await Promise.all([
+        backendApi.classifyCase(draft),
+        backendApi.findSimilarCases(draft),
+        backendApi.getSettings().catch(() => null),
+      ]);
+      const lists = getClassificationLists(settings);
+      const normalizedClassification = normalizeClassificationToOptions(
+        classification,
+        lists.topics,
+        lists.audience,
+        lists.questions,
+        lists.difficulties,
+        lists.intents,
+      );
+      const localMatches = buildLocalSimilarMatches(draft, get().savedCases.filter((item) => item.status === "saved"), get().savedBites);
+      const matches = backendMatches.length > 0 ? backendMatches : localMatches;
+      set((state) => ({
+        classificationDraft: normalizedClassification,
+        similarMatches: matches,
+        isClassifying: false,
+        isLoadingSimilar: false,
+        draftForm: {
+          ...state.draftForm,
+          caseName:
+            state.draftForm.caseName?.trim() || mockAiService.suggestCaseName(state.draftForm, classification),
+        },
+      }));
+    } catch (error) {
+      set({ isClassifying: false, isLoadingSimilar: false });
+      throw error;
+    }
   },
 
   createCaseFromDraft: async () => {

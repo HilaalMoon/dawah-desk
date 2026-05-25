@@ -95,6 +95,7 @@ const App = () => {
   const [aiSettings, setAiSettings] = useState<AdminSettingsPayload | null>(null);
   const [quickAssistMessages, setQuickAssistMessages] = useState<QuickAssistMessage[]>([]);
   const [isQuickAssisting, setIsQuickAssisting] = useState(false);
+  const [classificationError, setClassificationError] = useState<string | null>(null);
   const hasAttemptedBootstrapRecovery = useRef(false);
 
   const loadAiConfig = async () => {
@@ -567,7 +568,13 @@ const App = () => {
             isLoadingSimilar={isLoadingSimilar}
             onDraftChange={updateDraftField}
             onClassificationChange={updateClassificationField}
-            onRunClassification={() => void runClassification()}
+            classificationError={classificationError}
+            onRunClassification={() => {
+              setClassificationError(null);
+              runClassification().catch(() => {
+                setClassificationError("AI classification is not available. Please check your connection in Settings.");
+              });
+            }}
             onOpenWorkspace={() => void createCaseFromDraft()}
             onOpenSimilarCase={handleSelectCase}
           />

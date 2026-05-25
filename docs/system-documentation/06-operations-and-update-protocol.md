@@ -162,7 +162,7 @@ Download it, verify it extracts cleanly, then distribute it.
 
 **What users do with the zip**
 
-Users unzip the file, open the extracted folder, and double-click `DawahDesk_install.bat`. The installer handles `npm install`, building the frontend, and creating the desktop shortcut. No manual setup steps are required beyond running the installer.
+Users unzip the file, open the extracted folder, and double-click `00_INSTALL_DawahDesk.bat`. The installer handles `npm install`, building the frontend, and creating the desktop shortcut. No manual setup steps are required beyond running the installer.
 
 ---
 

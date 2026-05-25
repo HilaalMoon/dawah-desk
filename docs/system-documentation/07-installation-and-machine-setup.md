@@ -13,7 +13,7 @@ Da'wah Desk is installed by running a single batch file. The installer handles a
 
 ## What the installer does
 
-`DawahDesk_install.bat` performs the following steps in order:
+`00_INSTALL_DawahDesk.bat` performs the following steps in order:
 
 1. **Checks for Node.js** — if not installed, opens the Node.js download page and exits with a clear message. The user installs Node.js and re-runs the installer.
 2. **Runs `npm install`** — downloads and installs all app components. Requires an internet connection. Takes about a minute.
@@ -63,7 +63,7 @@ The setup screen does not reappear after credentials are saved. They survive app
 
 Double-click the **DawahDesk** shortcut on the desktop.
 
-The shortcut launches `_CCode_run-dawah-desk.bat` in the repo folder. This starts the backend and opens the frontend in the default browser.
+The shortcut launches `run-dawah-desk.bat` in the repo folder. This starts the backend and opens the frontend in the default browser.
 
 ---
 
@@ -71,7 +71,7 @@ The shortcut launches `_CCode_run-dawah-desk.bat` in the repo folder. This start
 
 | File | Purpose |
 |------|---------|
-| `DawahDesk_install.bat` | One-click installer — run once to set up the app |
+| `00_INSTALL_DawahDesk.bat` | One-click installer — run once to set up the app |
 | `zzSUCCESSNOTE.bat` | Completion summary window — launched automatically by the installer on success |
 | `INSTALL.txt` | Plain-English 4-step guide for non-technical users |
 
@@ -99,8 +99,8 @@ The shortcut launches `_CCode_run-dawah-desk.bat` in the repo folder. This start
 - If on a corporate network, a proxy may be blocking npm. Contact your IT department.
 
 **Desktop shortcut not created**
-- The installer will show a note and suggest running `_CCode_run-dawah-desk.bat` directly from the repo folder instead.
-- The shortcut can be created manually: right-click `_CCode_run-dawah-desk.bat` → Send to → Desktop (create shortcut).
+- The installer will show a note and suggest running `run-dawah-desk.bat` directly from the repo folder instead.
+- The shortcut can be created manually: right-click `run-dawah-desk.bat` → Send to → Desktop (create shortcut).
 
 **App opens but shows credential setup screen unexpectedly**
 - This means `DawahDeskData\credentials.json` is missing or was deleted. Paste the credential JSON again to proceed.
@@ -114,7 +114,7 @@ If the installer cannot be used, the app can be set up manually:
 1. Install Node.js from https://nodejs.org
 2. Open a command prompt in the repo folder
 3. Run `npm install`
-4. Double-click `_CCode_run-dawah-desk.bat` to launch the app
+4. Double-click `run-dawah-desk.bat` to launch the app
 5. Complete the credential setup screen on first run
 
 ---
@@ -122,6 +122,6 @@ If the installer cannot be used, the app can be set up manually:
 ## Distributing to new users (system administrator)
 
 1. Provide the user with the repo zip (from GitHub Releases — see Phase 4 docs).
-2. Instruct the user to unzip and double-click `DawahDesk_install.bat`.
+2. Instruct the user to unzip and double-click `00_INSTALL_DawahDesk.bat`.
 3. Send the user their Vertex AI service account JSON file separately — never include it in the zip.
 4. Direct the user to `INSTALL.txt` inside the zip for step-by-step guidance.

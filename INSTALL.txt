@@ -1,42 +1,43 @@
 Da'wah Desk — Installation Guide
 ==================================
 
-Before you start
-----------------
-- Make sure your computer is connected to the internet.
-- Make sure you have the credential file from your system administrator.
+Step 1 — Download and extract
+-------------------------------
+Download the release zip file from the link provided.
+Create a folder called "Dawah-Desk" anywhere on your computer.
+Extract the contents of the zip into that folder.
 
-
-Step 1 — Install Node.js (first time only)
--------------------------------------------
-Go to https://nodejs.org and download and install the latest version.
-
-If you are not sure whether Node.js is already installed, skip this step.
-The installer will tell you if it is missing.
-
-
-Step 2 — Run the installer
----------------------------
-Double-click DawahDesk_install.bat in the Da'wah Desk folder.
-
-A black window will appear and show you its progress.
-Leave it running — it will close on its own when finished.
-
+Step 2 — Install
+-----------------
+Open the Dawah-Desk folder.
+Double-click 00_INSTALL_DawahDesk.bat
+A window will appear showing installation progress.
+Wait until a completion message appears — this takes 1-2 minutes.
+A shortcut called "DawahDesk" will be added to your desktop.
 
 Step 3 — Enter your credentials
 ---------------------------------
-Da'wah Desk will open in your browser and ask you to paste in the credential file.
+Da'wah Desk will open in your browser automatically.
+If this is your first time, you will be asked to paste your credential file.
+Paste the full contents of the credential file provided by your system administrator.
+Click "Save and open Da'wah Desk".
 
-Paste the full contents of the file your system administrator sent you,
-then click Save and open Da'wah Desk.
+Step 4 — Start using the app
+------------------------------
+Da'wah Desk is now ready to use.
+To open it in future, double-click the DawahDesk shortcut on your desktop.
 
+Updating to a new version
+--------------------------
+When a new version is available:
+1. Download the new zip file
+2. Create a new folder (e.g. "Dawah-Desk-v2") and extract the zip into it
+3. Run 00_INSTALL_DawahDesk.bat from the new folder
+4. Your cases, sources, and credentials are preserved automatically
+5. Once confirmed working, you can delete the old folder
 
-Step 4 — You are ready
-------------------------
-Da'wah Desk is now installed and running.
-A shortcut called "Dawah Desk" has been added to your desktop for next time.
-
-
-To start Da'wah Desk in future
---------------------------------
-Double-click the Dawah Desk shortcut on your desktop.
+If anything goes wrong
+-----------------------
+Open the installation log file at:
+C:\Users\[your username]\AppData\Local\Temp\DawahDesk_install_log.txt
+Share this file with your system administrator for help.

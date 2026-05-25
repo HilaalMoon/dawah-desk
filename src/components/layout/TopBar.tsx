@@ -57,7 +57,6 @@ export const TopBar = ({
           aria-label={openCasesCollapsed ? "Expand top bar content" : "Collapse top bar content"}
         >
           <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
-          <span className="rounded px-1.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">Dev Build</span>
         </button>
         <div className="flex flex-wrap items-center gap-2">
           {activeTabs.length > 0 ? (
