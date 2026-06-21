@@ -3,7 +3,9 @@ Da'wah Desk — Installation Guide
 
 Step 1 — Download and extract
 -------------------------------
-Download the release zip file from the link provided.
+Download the latest version from:
+  https://github.com/HilaalMoon/dawah-desk/releases/latest
+On that page, under "Assets", click "Source code (zip)" to download.
 Create a folder called "Dawah-Desk" anywhere on your computer.
 Extract the contents of the zip into that folder.
 
@@ -44,7 +46,9 @@ It is recommended to select "Google Vertex AI / Gemini 2.5 Flash (Vertex)" for f
 Updating to a new version
 --------------------------
 When a new version is available:
-1. Download the new zip file
+1. Download the latest version from:
+   https://github.com/HilaalMoon/dawah-desk/releases/latest
+   (under "Assets", click "Source code (zip)")
 2. Create a new folder (e.g. "Dawah-Desk-v2") and extract the zip into it
 3. Run 00_INSTALL_DawahDesk.bat from the new folder
 4. Your cases, sources, and credentials are preserved automatically
