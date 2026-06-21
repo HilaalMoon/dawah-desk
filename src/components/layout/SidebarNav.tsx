@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { BookOpen, Database, FolderOpen, Home, PlusSquare, Settings, Sparkles } from "lucide-react";
 import { classNames } from "@/utils/format";
+import { LAST_UPDATED } from "@/buildInfo";
 import packageJson from "../../../package.json";
 
 type SidebarNavProps = {
@@ -29,23 +29,9 @@ const formatTimestamp = (date: Date) =>
     timeStyle: "short",
   }).format(date);
 
+const lastUpdatedLabel = formatTimestamp(new Date(LAST_UPDATED));
+
 export const SidebarNav = ({ currentView, onSelect }: SidebarNavProps) => {
-  const [lastUpdatedLabel, setLastUpdatedLabel] = useState(() => formatTimestamp(new Date()));
-
-  useEffect(() => {
-    const hot = (import.meta as ImportMeta & {
-      hot?: { on: (event: string, callback: () => void) => void };
-    }).hot;
-
-    if (!hot) {
-      return;
-    }
-
-    hot.on("vite:beforeUpdate", () => {
-      setLastUpdatedLabel(formatTimestamp(new Date()));
-    });
-  }, []);
-
   return (
     <aside className="panel sticky top-4 flex h-[calc(100vh-2rem)] w-[260px] flex-col px-4 py-5">
       <div className="mb-8 border-b border-stone-200 px-2 pb-4">

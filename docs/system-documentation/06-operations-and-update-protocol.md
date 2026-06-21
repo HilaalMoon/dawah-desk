@@ -127,22 +127,30 @@ Open `package.json` and update the `version` field:
 "version": "1.3.0"
 ```
 
-**2. Commit the version bump**
+**2. Stamp the "last updated" time**
 
 ```powershell
-git add package.json
+npm run stamp
+```
+
+This writes the current time into `src/buildInfo.ts`, which the sidebar's **Production Version → Last updated** line displays. It must be run on the maintainer's machine at release time. Never wire it into the dev/start scripts — on a user's machine it would reset to their app-open time (the original bug this replaced).
+
+**3. Commit the version bump and build stamp**
+
+```powershell
+git add package.json src/buildInfo.ts
 git commit -m "Da'wah Desk v1.3.0 — release"
 git push origin main
 ```
 
-**3. Create and push an annotated tag**
+**4. Create and push an annotated tag**
 
 ```powershell
 git tag -a v1.3.0 -m "Da'wah Desk v1.3.0 — <short description>"
 git push origin v1.3.0
 ```
 
-**4. Create the GitHub Release**
+**5. Create the GitHub Release**
 
 1. Go to `https://github.com/HilaalMoon/dawah-desk/releases`
 2. Click **Draft a new release**

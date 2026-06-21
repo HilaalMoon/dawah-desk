@@ -12,7 +12,19 @@ Step 2 — Install
 Open the Dawah-Desk folder.
 Double-click 00_INSTALL_DawahDesk.bat
 A window will appear showing installation progress.
-Wait until a completion message appears — this takes 1-2 minutes.
+
+First time only — Node.js:
+Da'wah Desk needs a free, standard tool called Node.js to run.
+The very first time you install, if Node.js is not already on your computer,
+the installer will open the Node.js download page and then stop.
+If that happens:
+  1. Install Node.js using the default options (just keep clicking Next, then Install)
+  2. Run 00_INSTALL_DawahDesk.bat again
+You only ever do this once. If Node.js is already installed, this is skipped.
+
+The installer then automatically downloads the rest of the app's components.
+This needs an internet connection and takes 1-2 minutes — no action needed from you.
+Wait until a completion message appears.
 A shortcut called "DawahDesk" will be added to your desktop.
 
 Step 3 — Enter your credentials
@@ -26,6 +38,8 @@ Step 4 — Start using the app
 ------------------------------
 Da'wah Desk is now ready to use.
 To open it in future, double-click the DawahDesk shortcut on your desktop.
+With AI credentials, you can use AI features across the app.
+It is recommended to select "Google Vertex AI / Gemini 2.5 Flash (Vertex)" for faster results.
 
 Updating to a new version
 --------------------------

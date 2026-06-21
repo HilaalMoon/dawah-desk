@@ -107,6 +107,22 @@ export const defaultAiProviders = [
     location: "global",
       modelOptions: [
         {
+          modelId: "gemini-3.5-flash",
+          label: "Gemini 3.5 Flash (Vertex)",
+          enabled: true,
+          supportsStructuredOutput: true,
+          supportsToolUse: false,
+          supportsReasoning: true,
+        },
+        {
+          modelId: "gemini-3.1-flash-lite",
+          label: "Gemini 3.1 Flash Lite (Vertex)",
+          enabled: true,
+          supportsStructuredOutput: true,
+          supportsToolUse: false,
+          supportsReasoning: true,
+        },
+        {
           modelId: "gemini-2.5-flash",
           label: "Gemini 2.5 Flash (Vertex)",
           enabled: true,
@@ -117,22 +133,6 @@ export const defaultAiProviders = [
         {
           modelId: "gemini-2.5-pro",
           label: "Gemini 2.5 Pro (Vertex)",
-          enabled: true,
-          supportsStructuredOutput: true,
-          supportsToolUse: false,
-          supportsReasoning: true,
-        },
-        {
-          modelId: "gemini-3-flash-preview",
-          label: "Gemini 3 Flash (Vertex)",
-          enabled: true,
-          supportsStructuredOutput: true,
-          supportsToolUse: false,
-          supportsReasoning: true,
-        },
-        {
-          modelId: "gemini-3-pro-preview",
-          label: "Gemini 3 Pro (Vertex)",
           enabled: true,
           supportsStructuredOutput: true,
           supportsToolUse: false,
