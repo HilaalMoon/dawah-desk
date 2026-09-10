@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
   ChevronUp,
   Copy,
+  Database,
   Download,
   Languages,
   MessageSquareQuote,
   Pencil,
   Plus,
+  Save,
   Sparkles,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { BitePurpose, CaseRecord, ResponseBite, StructureSuggestion, SupportStatus } from "@/types";
+import { getOverallConfidence, OverallConfidence } from "@/utils/confidence";
 import { downloadCsv } from "@/utils/csv";
 import { classNames } from "@/utils/format";
 
@@ -24,6 +27,9 @@ type ResponseBuilderPanelProps = {
   bites: ResponseBite[];
   structureSuggestions: StructureSuggestion[];
   isGeneratingStructure: boolean;
+  onOpenConfidence: () => void;
+  onFillFromSources: (biteId: string) => void;
+  onSaveCase: () => void;
   onAddBite: () => void;
   onGenerateStructure: () => void;
   onClearSuggestions: () => void;
@@ -73,6 +79,34 @@ const getSupportTone = (status: SupportStatus) =>
 
 const previewClass = "text-sm leading-6 text-slate-700";
 
+const confidenceChipConfig: Record<OverallConfidence, { label: string; chipClass: string; dotClass: string }> = {
+  "well-supported": {
+    label: "Well supported",
+    chipClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    dotClass: "bg-emerald-500",
+  },
+  "mixed-support": {
+    label: "Mixed support",
+    chipClass: "border-amber-200 bg-amber-50 text-amber-700",
+    dotClass: "bg-amber-500",
+  },
+  "ai-assisted": {
+    label: "AI-assisted",
+    chipClass: "border-amber-200 bg-amber-50 text-amber-700",
+    dotClass: "bg-amber-500",
+  },
+  "needs-review": {
+    label: "Needs review",
+    chipClass: "border-rose-200 bg-rose-50 text-rose-600",
+    dotClass: "bg-rose-500",
+  },
+  empty: {
+    label: "No bites yet",
+    chipClass: "border-stone-200 bg-stone-100 text-slate-500",
+    dotClass: "bg-stone-400",
+  },
+};
+
 const getSourceCategory = (bite: ResponseBite): NonNullable<ResponseBite["sourceCategory"]> => {
   if (bite.sourceCategory) return bite.sourceCategory;
   if (bite.structuredSourceLayout === "split-source") return "quran";
@@ -85,6 +119,9 @@ export const ResponseBuilderPanel = ({
   bites,
   structureSuggestions,
   isGeneratingStructure,
+  onOpenConfidence,
+  onFillFromSources,
+  onSaveCase,
   onAddBite,
   onGenerateStructure,
   onClearSuggestions,
@@ -98,6 +135,19 @@ export const ResponseBuilderPanel = ({
 }: ResponseBuilderPanelProps) => {
   const [editingBite, setEditingBite] = useState<ResponseBite | null>(null);
   const [expandedBiteId, setExpandedBiteId] = useState<string | null>(null);
+  const overallConfidence = getOverallConfidence(bites);
+  const confidenceChip = confidenceChipConfig[overallConfidence];
+  const pendingScrollToNewBiteRef = useRef(false);
+
+  // After Add Bite appends a blank bite, scroll it into view so the user lands
+  // on the choice card instead of having to hunt for it at the bottom.
+  useEffect(() => {
+    if (!pendingScrollToNewBiteRef.current) return;
+    pendingScrollToNewBiteRef.current = false;
+    const lastBite = bites[bites.length - 1];
+    if (!lastBite) return;
+    document.getElementById(`builder-bite-${lastBite.biteId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [bites]);
 
   const toggleExpanded = (biteId: string) => {
     setExpandedBiteId((current) => (current === biteId ? null : biteId));
@@ -138,11 +188,8 @@ export const ResponseBuilderPanel = ({
 
   return (
     <>
-      <section
-        tabIndex={0}
-        className="panel flex h-full min-h-0 flex-col px-5 py-5 xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)]"
-      >
-        <div className="-mx-5 sticky top-0 z-10 bg-white/95 px-5 pb-4 backdrop-blur">
+      <section tabIndex={0} className="panel flex min-h-0 flex-col px-5 py-5">
+        <div className="-mx-5 sticky top-[var(--topbar-offset,7rem)] z-10 bg-white/95 px-5 pb-4 backdrop-blur">
           <SectionTitle
             eyebrow="Response Builder"
             title="Draft in short logical bites"
@@ -163,6 +210,13 @@ export const ResponseBuilderPanel = ({
                   type="button"
                   onClick={onGenerateStructure}
                   disabled={isGeneratingStructure || structureSuggestions.length > 0 || bites.length > 0}
+                  title={
+                    bites.length > 0
+                      ? "Available for empty drafts only — structure suggestions are generated before bites exist"
+                      : structureSuggestions.length > 0
+                        ? "Structure suggestions are already shown below"
+                        : "Generate an AI-proposed bite structure for this case"
+                  }
                   className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Sparkles size={16} />
@@ -170,20 +224,49 @@ export const ResponseBuilderPanel = ({
                 </button>
                 <button
                   type="button"
-                  onClick={onAddBite}
+                  onClick={() => {
+                    pendingScrollToNewBiteRef.current = true;
+                    onAddBite();
+                  }}
                   className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white"
                 >
                   <Plus size={16} />
                   Add Bite
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenConfidence}
+                  title="Open the confidence and support breakdown"
+                  aria-label={`Confidence: ${confidenceChip.label}. Open the confidence and support breakdown`}
+                  className={classNames(
+                    "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium",
+                    confidenceChip.chipClass,
+                  )}
+                >
+                  <span className={classNames("h-2.5 w-2.5 rounded-full", confidenceChip.dotClass)} />
+                  {confidenceChip.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={onSaveCase}
+                  title={
+                    caseItem.status === "saved"
+                      ? "Update the saved case (Ctrl+S)"
+                      : "Save this case to the library (Ctrl+S)"
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                >
+                  <Save size={16} />
+                  {caseItem.status === "saved" ? "Update Saved Case" : "Save Case"}
                 </button>
               </div>
             }
           />
         </div>
 
-        <div className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1">
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {structureSuggestions.length > 0 ? (
-            <div className="rounded-2xl bg-mist px-4 py-4">
+            <div className="col-span-full rounded-2xl bg-mist px-4 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">Suggested structure</p>
@@ -226,10 +309,19 @@ export const ResponseBuilderPanel = ({
             </div>
           ) : null}
 
+          {bites.length === 0 && structureSuggestions.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm text-slate-600">
+              No bites yet — use <span className="font-semibold text-slate-900">Add Bite</span>, then write it yourself or
+              fill it from your saved sources; or use{" "}
+              <span className="font-semibold text-slate-900">Suggest Structure</span> for an AI-proposed outline.
+            </div>
+          ) : null}
+
           {bites.map((bite, index) => {
             const isSplitSource = bite.structuredSourceLayout === "split-source" && Boolean(bite.sourcePrimaryText);
             const hasExpandableDetails = true;
             const isExpanded = expandedBiteId === bite.biteId;
+            const isBlank = !isSplitSource && !bite.biteText.trim();
 
             return (
               <div
@@ -238,6 +330,7 @@ export const ResponseBuilderPanel = ({
                 className={classNames(
                   "rounded-2xl border px-4 py-4",
                   bite.usedInConversation ? "border-stone-300 bg-stone-200" : "border-stone-200 bg-stone-50",
+                  isExpanded && "col-span-full",
                 )}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -286,7 +379,7 @@ export const ResponseBuilderPanel = ({
                           </div>
                         ) : null}
                       </div>
-                    ) : (
+                    ) : isBlank ? null : (
                       <div className="mt-3">
                         <p className={classNames(previewClass, !isExpanded && "line-clamp-2")}>{bite.biteText}</p>
                       </div>
@@ -311,6 +404,24 @@ export const ResponseBuilderPanel = ({
                     >
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => onCopyBite(bite)}
+                      className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-slate-700"
+                      aria-label="Copy bite"
+                      title="Copy"
+                    >
+                      <Copy size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onTranslateBite(bite)}
+                      className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-slate-700"
+                      aria-label="Translate bite"
+                      title="Translate"
+                    >
+                      <Languages size={16} />
+                    </button>
                     {isExpanded ? (
                       <>
                         <button
@@ -320,20 +431,6 @@ export const ResponseBuilderPanel = ({
                           aria-label="Edit bite"
                         >
                           <Pencil size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onCopyBite(bite)}
-                          className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-slate-700"
-                        >
-                          <Copy size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onTranslateBite(bite)}
-                          className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-slate-700"
-                        >
-                          <Languages size={16} />
                         </button>
                         {bite.sourceTafsirText ? (
                           <button
@@ -371,6 +468,30 @@ export const ResponseBuilderPanel = ({
                     ) : null}
                   </div>
                 </div>
+
+                {isBlank ? (
+                  <div className="mt-3 rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-4">
+                    <p className="text-sm text-slate-600">Fill this bite with content:</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onFillFromSources(bite.biteId)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                      >
+                        <Database size={16} />
+                        Insert from saved sources
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingBite({ ...bite })}
+                        className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-slate-900"
+                      >
+                        <Pencil size={16} />
+                        Write content
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             );
           })}

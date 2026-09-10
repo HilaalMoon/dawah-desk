@@ -12,6 +12,7 @@ import {
 import { activeCaseTabs, responseBites, saveMetadataSuggestions, savedCases, sourceItems } from "@/data/seed";
 import { backendApi } from "@/services/backendApi";
 import { mockAiService } from "@/services/mockAi";
+import { getOverallConfidence, toCaseConfidenceStatus } from "@/utils/confidence";
 import {
   ActiveCaseTab,
   CaseClassification,
@@ -26,7 +27,7 @@ import {
   TranslationResult,
 } from "@/types";
 
-type ViewKey = "home" | "new-case" | "workspace" | "library" | "case-detail" | "save-review" | "sources" | "settings" | "quick-aissist";
+type ViewKey = "home" | "new-case" | "workspace" | "library" | "case-detail" | "save-review" | "sources" | "settings";
 
 type AppState = {
   currentView: ViewKey;
@@ -63,7 +64,12 @@ type AppState = {
   createCaseFromDraft: () => Promise<void>;
   closeTab: (tabId: string) => void;
   togglePinTab: (tabId: string) => void;
-  addSourceToWorkspace: (caseId: string, sourceId: string) => void;
+  insertSourceBitesAt: (
+    caseId: string,
+    sourceId: string,
+    anchorBiteId: string,
+    mode: "replace" | "after",
+  ) => string | null;
   addSavedBiteToWorkspace: (caseId: string, bite: ResponseBite) => void;
   updateWorkspaceBite: (caseId: string, biteId: string, changes: Partial<ResponseBite>) => void;
   addEmptyBite: (caseId: string) => void;
@@ -779,35 +785,45 @@ export const useAppStore = create<AppState>()(
       ),
     })),
 
-  addSourceToWorkspace: (caseId, sourceId) =>
-    set((state) => {
-      const selected = state.selectedSourceIds[caseId] ?? [];
-      if (selected.includes(sourceId)) return state;
+  insertSourceBitesAt: (caseId, sourceId, anchorBiteId, mode) => {
+    const state = get();
+    const selected = state.selectedSourceIds[caseId] ?? [];
+    if (selected.includes(sourceId)) return null;
 
-      const source = state.sourceItems.find((item) => item.sourceId === sourceId);
-      const existingBites = state.workspaceBites[caseId] ?? [];
-      const nextOrder = existingBites.length + 1;
+    const source = state.sourceItems.find((item) => item.sourceId === sourceId);
+    const existingBites = state.workspaceBites[caseId] ?? [];
+    const anchorIndex = existingBites.findIndex((bite) => bite.biteId === anchorBiteId);
+    if (!source || anchorIndex === -1) return null;
 
-      return {
-        activeTabs: markCaseTabUnsaved(state.activeTabs, caseId),
-        sourceItems: state.sourceItems.map((item) =>
-          item.sourceId === sourceId ? { ...item, accessCount: (item.accessCount ?? 0) + 1 } : item,
-        ),
-        selectedSourceIds: {
-          ...state.selectedSourceIds,
-          [caseId]: [...selected, sourceId],
-        },
-        workspaceBites: source
-          ? {
-              ...state.workspaceBites,
-              [caseId]: [
-                ...existingBites,
-                ...buildBitesFromSource(source, caseId, nextOrder),
-              ],
-            }
-          : state.workspaceBites,
-      };
-    }),
+    // "replace" fills a blank placeholder bite in place; "after" inserts the
+    // generated bite(s) directly after the anchor bite. Multi-paragraph manual
+    // sources may expand into several bites — all land at the anchor position.
+    const insertedBites = buildBitesFromSource(source, caseId, anchorIndex + 1);
+    const nextBites = [...existingBites];
+    if (mode === "replace") {
+      nextBites.splice(anchorIndex, 1, ...insertedBites);
+    } else {
+      nextBites.splice(anchorIndex + 1, 0, ...insertedBites);
+    }
+    const reorderedBites = nextBites.map((bite, index) => ({ ...bite, biteOrder: index + 1 }));
+
+    set((current) => ({
+      activeTabs: markCaseTabUnsaved(current.activeTabs, caseId),
+      sourceItems: current.sourceItems.map((item) =>
+        item.sourceId === sourceId ? { ...item, accessCount: (item.accessCount ?? 0) + 1 } : item,
+      ),
+      selectedSourceIds: {
+        ...current.selectedSourceIds,
+        [caseId]: [...selected, sourceId],
+      },
+      workspaceBites: {
+        ...current.workspaceBites,
+        [caseId]: reorderedBites,
+      },
+    }));
+
+    return insertedBites[insertedBites.length - 1]?.biteId ?? null;
+  },
 
   addSavedBiteToWorkspace: (caseId, bite) =>
     set((state) => {
@@ -1208,43 +1224,49 @@ export const useAppStore = create<AppState>()(
         (source) => source.sourceType === "quran" || source.sourceType === "hadith",
       );
       const isCustomTranslationWithoutSources = translation.sourceId.startsWith("custom-") && linkedSources.length === 0;
+
+      // Split multi-paragraph translations into one bite per paragraph, matching
+      // how multi-paragraph sources land when inserted from the source panel.
+      const translatedText = textOverride ?? translation.workingTranslation;
+      const paragraphs = splitParagraphs(translatedText);
+      const parts = paragraphs.length > 1 ? paragraphs : [translatedText];
+      const baseTitle = translation.sourceTitle || "Translated support";
+      const insertedBites: ResponseBite[] = parts.map((part, index) => ({
+        biteId: createBiteId(caseId, "translation"),
+        caseId,
+        biteOrder: nextOrder + index,
+        biteTitle: `${baseTitle}${parts.length > 1 ? ` (${index + 1}/${parts.length})` : ""}`,
+        biteText: part,
+        bitePurpose: "evidence",
+        sourceCategory: isCustomTranslationWithoutSources
+          ? "user"
+          : hasPrimarySource
+            ? linkedSources.some((source) => source.sourceType === "hadith")
+              ? "hadith"
+              : "quran"
+            : "other",
+        sourceSecondaryLabel: primaryLinkedSource ? getTranslationResourceLabel(primaryLinkedSource) : undefined,
+        translationResourceName: primaryLinkedSource?.translationResourceName,
+        sourceTafsirLabel: primaryLinkedSource ? getTafsirResourceLabel(primaryLinkedSource) : undefined,
+        tafsirResourceName: primaryLinkedSource?.tafsirResourceName,
+        sourceLinks: inheritedSourceLinks,
+        supportStatus: isCustomTranslationWithoutSources
+          ? "weak-support"
+          : hasPrimarySource
+            ? "direct-source"
+            : "translated-source",
+        supportStatusManuallySet: false,
+        aiAssisted: Boolean(translation.aiAssisted),
+        translationUsed: true,
+        usedInConversation: false,
+        notes: translation.warning,
+      }));
+
       return {
         activeTabs: markCaseTabUnsaved(state.activeTabs, caseId),
         workspaceBites: {
           ...state.workspaceBites,
-          [caseId]: [
-            ...bites,
-            {
-              biteId: createBiteId(caseId, "translation"),
-              caseId,
-              biteOrder: nextOrder,
-              biteTitle: translation.sourceTitle || "Translated support",
-              biteText: textOverride ?? translation.workingTranslation,
-              bitePurpose: "evidence",
-              sourceCategory: isCustomTranslationWithoutSources
-                ? "user"
-                : hasPrimarySource
-                  ? linkedSources.some((source) => source.sourceType === "hadith")
-                    ? "hadith"
-                    : "quran"
-                  : "other",
-              sourceSecondaryLabel: primaryLinkedSource ? getTranslationResourceLabel(primaryLinkedSource) : undefined,
-              translationResourceName: primaryLinkedSource?.translationResourceName,
-              sourceTafsirLabel: primaryLinkedSource ? getTafsirResourceLabel(primaryLinkedSource) : undefined,
-              tafsirResourceName: primaryLinkedSource?.tafsirResourceName,
-              sourceLinks: inheritedSourceLinks,
-              supportStatus: isCustomTranslationWithoutSources
-                ? "weak-support"
-                : hasPrimarySource
-                  ? "direct-source"
-                  : "translated-source",
-              supportStatusManuallySet: false,
-              aiAssisted: Boolean(translation.aiAssisted),
-              translationUsed: true,
-              usedInConversation: false,
-              notes: translation.warning,
-            },
-          ],
+          [caseId]: [...bites, ...insertedBites],
         },
         translationModalOpen: false,
         translationSourceId: null,
@@ -1277,6 +1299,7 @@ export const useAppStore = create<AppState>()(
               updatedDate: new Date().toISOString(),
               responseBiteIds: (state.workspaceBites[caseId] ?? []).map((bite) => bite.biteId),
               sourceIdsUsed: state.selectedSourceIds[caseId] ?? [],
+              confidenceStatus: toCaseConfidenceStatus(getOverallConfidence(state.workspaceBites[caseId] ?? [])),
             }
           : caseItem,
       ),

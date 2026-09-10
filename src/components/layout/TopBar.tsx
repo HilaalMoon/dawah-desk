@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, HelpCircle, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, HelpCircle, Languages, Search, Sparkles } from "lucide-react";
 import { ActiveCaseTabs } from "@/components/home/ActiveCaseTabs";
 import { ActiveCaseTab, CaseRecord } from "@/types";
 
@@ -12,6 +12,8 @@ type TopBarProps = {
   onOpenSearchCase: (caseId: string) => void;
   actions?: ReactNode;
   onHelpOpen: () => void;
+  onOpenQuickAssist: () => void;
+  onOpenTranslation: () => void;
   activeTabs: ActiveCaseTab[];
   cases: CaseRecord[];
   currentCaseId: string | null;
@@ -30,6 +32,8 @@ export const TopBar = ({
   onOpenSearchCase,
   actions,
   onHelpOpen,
+  onOpenQuickAssist,
+  onOpenTranslation,
   activeTabs,
   cases,
   currentCaseId,
@@ -41,23 +45,32 @@ export const TopBar = ({
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(OPEN_CASES_STORAGE_KEY) === "true";
   });
+  const headerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(OPEN_CASES_STORAGE_KEY, openCasesCollapsed ? "true" : "false");
   }, [openCasesCollapsed]);
 
+  // Publish the top bar's bottom edge (it sticks at top-4 = 16px and its height
+  // changes with the Open Cases strip) so other pinned elements — e.g. the
+  // Response Builder header — can stick just below it instead of underneath it.
+  useEffect(() => {
+    const element = headerRef.current;
+    if (!element || typeof window === "undefined") return;
+    const updateOffset = () => {
+      document.documentElement.style.setProperty("--topbar-offset", `${element.offsetHeight + 16 + 8}px`);
+    };
+    updateOffset();
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <header className="panel sticky top-4 z-20 mb-6 w-full px-5 py-4">
+    <header ref={headerRef} className="panel sticky top-4 z-20 mb-6 w-full px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <button
-          type="button"
-          onClick={() => setOpenCasesCollapsed((current) => !current)}
-          className="flex items-center gap-2 text-left"
-          aria-label={openCasesCollapsed ? "Expand top bar content" : "Collapse top bar content"}
-        >
-          <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
-        </button>
+        <h2 className="text-2xl font-semibold text-slate-900">{title}</h2>
         <div className="flex flex-wrap items-center gap-2">
           {activeTabs.length > 0 ? (
             <button
@@ -71,6 +84,26 @@ export const TopBar = ({
             </button>
           ) : null}
           {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 p-1">
+            <button
+              type="button"
+              onClick={onOpenQuickAssist}
+              className="inline-flex items-center rounded-lg bg-white p-2 text-slate-700 shadow-sm hover:bg-stone-100"
+              aria-label="Open Quick AIssist"
+              title="Quick AIssist"
+            >
+              <Sparkles size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenTranslation}
+              className="inline-flex items-center rounded-lg bg-white p-2 text-slate-700 shadow-sm hover:bg-stone-100"
+              aria-label="Open AI Translation"
+              title="AI Translation"
+            >
+              <Languages size={16} />
+            </button>
+          </div>
           <button
             type="button"
             onClick={onHelpOpen}

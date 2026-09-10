@@ -52,7 +52,7 @@ const QuickStart = () => (
         <li>Go to Sources, search Quran.com or Sunnah.com directly from the app, and save the sources you need to your library</li>
         <li>
           <AiFeatureBox name="Suggest Structure">
-            Open the Workspace, add your saved sources, use Suggest Structure to get AI-proposed bites, refine them, and save the case
+            Open the Workspace and click Add Bite — then fill the bite from your saved sources or write it yourself. On an empty draft you can also use Suggest Structure to get AI-proposed bites. Refine them, then save the case
           </AiFeatureBox>
         </li>
       </ol>
@@ -104,7 +104,7 @@ const KeyConcepts = () => (
     </div>
     <div>
       <p className="font-semibold text-slate-900">Quick AIssist</p>
-      <p className="mt-1">A lightweight text-only chat for quick model questions. It does not save history and is not connected to your cases or sources. Use it for quick lookups without leaving the app.</p>
+      <p className="mt-1">A lightweight text-only chat for quick model questions. Open it any time from the sparkle icon in the top bar. It does not save history and is not connected to your cases or sources. Use it for quick lookups without leaving the app.</p>
     </div>
   </div>
 );

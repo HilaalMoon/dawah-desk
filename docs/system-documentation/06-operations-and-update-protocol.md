@@ -1,8 +1,8 @@
 # 06. Operations And Update Protocol
 
 ## Current Version
-- app version: `1.1.9`
-- documentation baseline date: `2026-04-18`
+- app version: `1.2.3` (plus the September 2026 workspace UI revision, unreleased)
+- documentation baseline date: `2026-09-10`
 
 ## How To Run Locally
 Primary local launcher:

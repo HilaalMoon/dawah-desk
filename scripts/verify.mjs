@@ -78,7 +78,9 @@ for (const filePath of walk(path.join(repoRoot, "docs", "system-documentation"))
 
 for (const filePath of [
   "server/defaults.js",
-  "server/data/runtime-state.json",
+  // Phase 1 moved runtime state out of the repo; the shipped seed content is
+  // now the starter library.
+  "server/data/starter-library.json",
   "src/services/backendApi.ts",
 ]) {
   const contents = readFileSync(path.join(repoRoot, filePath), "utf8");

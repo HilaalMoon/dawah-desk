@@ -7,7 +7,7 @@ import { classNames } from "@/utils/format";
 type TranslationModalProps = {
   result: TranslationResult;
   isTranslating?: boolean;
-  onInsert: (selectedText: string) => void;
+  onInsert?: (selectedText: string) => void;
   onCopy: (selectedText: string) => void;
   onCancel: () => void;
   onReword: (options: {
@@ -74,6 +74,12 @@ export const TranslationModal = ({
               <input
                 value={targetLanguageInput}
                 onChange={(event) => setTargetLanguageInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !isTranslating) {
+                    event.preventDefault();
+                    handleReword();
+                  }
+                }}
                 className="rounded-xl border border-stone-200 bg-white px-3 py-3 text-sm font-medium text-slate-900"
                 placeholder="English"
               />
@@ -133,14 +139,16 @@ export const TranslationModal = ({
           >
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={() => onInsert(selectedText)}
-            disabled={!selectedText.trim()}
-            className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white"
-          >
-            Insert Into Draft
-          </button>
+          {onInsert ? (
+            <button
+              type="button"
+              onClick={() => onInsert(selectedText)}
+              disabled={!selectedText.trim()}
+              className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white"
+            >
+              Insert Into Draft
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

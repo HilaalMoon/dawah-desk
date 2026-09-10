@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bot, Save } from "lucide-react";
+import { Bot } from "lucide-react";
 import { HomeDashboard } from "@/components/home/HomeDashboard";
 import { AnswerLibrary } from "@/components/library/AnswerLibrary";
 import { SavedCaseDetail } from "@/components/library/SavedCaseDetail";
@@ -9,13 +9,16 @@ import { CredentialSetupScreen } from "@/components/setup/CredentialSetupScreen"
 import { QuickAissistPanel } from "@/components/quick-assist/QuickAissistPanel";
 import { HelpModal } from "@/components/help/HelpModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { UtilityModal } from "@/components/ui/UtilityModal";
 import { ToastItem, ToastViewport } from "@/components/ui/ToastViewport";
 import { AppShell } from "@/components/layout/AppShell";
 import { NewCaseForm } from "@/components/new-case/NewCaseForm";
 import { TranslationModal } from "@/components/translation/TranslationModal";
 import { ResearchWorkspace } from "@/components/workspace/ResearchWorkspace";
+import { SourcePanel } from "@/components/workspace/SourcePanel";
 import { backendApi } from "@/services/backendApi";
 import { useAppStore } from "@/state/useAppStore";
+import { matchesSearchQuery } from "@/utils/search";
 import { QuickAssistMessage, ResponseBite } from "@/types";
 import { AdminSettingsPayload, AIProviderConfig, CaseExportFile } from "@/types/backend";
 import {
@@ -60,7 +63,7 @@ const App = () => {
     createCaseFromDraft,
     closeTab,
     togglePinTab,
-    addSourceToWorkspace,
+    insertSourceBitesAt,
     addSavedBiteToWorkspace,
     updateWorkspaceBite,
     addEmptyBite,
@@ -96,6 +99,11 @@ const App = () => {
   const [quickAssistMessages, setQuickAssistMessages] = useState<QuickAssistMessage[]>([]);
   const [isQuickAssisting, setIsQuickAssisting] = useState(false);
   const [classificationError, setClassificationError] = useState<string | null>(null);
+  const [activeUtilityModal, setActiveUtilityModal] = useState<"quick-assist" | "translation" | null>(null);
+  // When set, the saved-sources modal is open, targeting a bite in the builder.
+  // "replace" fills the blank bite it was opened from; after the first insert the
+  // anchor advances with mode "after" so further adds land right after it.
+  const [sourceFillAnchor, setSourceFillAnchor] = useState<{ biteId: string; mode: "replace" | "after" } | null>(null);
   const hasAttemptedBootstrapRecovery = useRef(false);
 
   const loadAiConfig = async () => {
@@ -215,7 +223,21 @@ const App = () => {
     }
   };
 
+  const handleTranslateSource = (sourceId: string) => {
+    const source = sourceItems.find((item) => item.sourceId === sourceId);
+    if ((source?.sourceType === "quran" || source?.sourceType === "hadith") && source.authenticatedTranslation?.trim()) {
+      void copyText(source.authenticatedTranslation, "Copied stored English translation.");
+      return;
+    }
+    void openTranslationModal(sourceId).catch((error) => {
+      pushToast(error instanceof Error ? error.message : "Translation failed.", "info");
+    });
+  };
+
   const currentCase = savedCases.find((item) => item.caseId === currentCaseId) ?? savedCases[0];
+  // Strict version without the fallback — used by the Sources utility modal to know
+  // whether a case is genuinely open (Add to draft needs a real target case).
+  const activeCase = currentCaseId ? savedCases.find((item) => item.caseId === currentCaseId) : undefined;
   const currentActiveTab = activeTabs.find((tab) => tab.caseId === currentCaseId) ?? null;
   const libraryCase = savedCases.find((item) => item.caseId === selectedLibraryCaseId) ?? savedCases[0];
   const pendingDeleteCase = savedCases.find((item) => item.caseId === pendingDeleteCaseId) ?? null;
@@ -225,8 +247,8 @@ const App = () => {
     const biteText = (workspaceBites[caseItem.caseId] ?? [])
       .map((bite) => `${bite.biteTitle} ${bite.biteText}`)
       .join(" ");
-    const haystack = `${caseItem.title} ${caseItem.originalQuestion} ${caseItem.topic} ${caseItem.audienceType} ${metadataTags} ${biteText}`.toLowerCase();
-    return haystack.includes(searchTerm.toLowerCase());
+    const haystack = `${caseItem.title} ${caseItem.originalQuestion} ${caseItem.topic} ${caseItem.audienceType} ${metadataTags} ${biteText}`;
+    return matchesSearchQuery(haystack, searchTerm);
   });
   const filteredLibraryCases = filteredCases.filter((caseItem) => caseItem.status === "saved");
   const searchMatches = searchTerm.trim() ? filteredLibraryCases.slice(0, 6) : [];
@@ -391,11 +413,19 @@ const App = () => {
       : [],
   );
 
+  const activeModelLabel =
+    enabledProviderModelOptions.find(
+      (option) =>
+        option.providerId === aiSettings?.aiDefaults.defaultProviderId &&
+        option.modelId === aiSettings?.aiDefaults.defaultModelId,
+    )?.label ?? "";
+
   const globalModelPicker =
     enabledProviderModelOptions.length > 0 && aiSettings ? (
       <div key="global-ai" className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2">
         <Bot size={15} className="text-slate-500" />
         <select
+          title={activeModelLabel}
           value={`${aiSettings.aiDefaults.defaultProviderId}::${aiSettings.aiDefaults.defaultModelId}`}
           onChange={(event) => {
             const [defaultProviderId, defaultModelId] = event.target.value.split("::");
@@ -412,7 +442,7 @@ const App = () => {
                 pushToast(`Active model set to ${nextLabel}.`, "info");
               });
           }}
-          className="min-w-[220px] border-none bg-transparent text-sm outline-none"
+          className="w-[160px] truncate border-none bg-transparent text-sm outline-none"
           aria-label="Active AI model"
         >
           {enabledProviderModelOptions.map((option) => (
@@ -424,42 +454,44 @@ const App = () => {
       </div>
     ) : null;
 
-  const workspaceActions =
-    currentView === "workspace"
-      ? [
-          <button
-            key="save-case"
-            type="button"
-            onClick={() => {
-              if (currentCaseId) {
-                confirmSaveCase(currentCaseId);
-                void backendApi.saveCase({
-                  caseItem: {
-                    ...(savedCases.find((item) => item.caseId === currentCaseId) ?? currentCase),
-                    caseId: currentCaseId,
-                    status: "saved",
-                    updatedDate: new Date().toISOString(),
-                    responseBiteIds: (workspaceBites[currentCaseId] ?? []).map((bite) => bite.biteId),
-                    sourceIdsUsed: selectedSourceIds[currentCaseId] ?? [],
-                  },
-                  bites: workspaceBites[currentCaseId] ?? [],
-                });
-                pushToast(
-                  currentCase?.status === "saved"
-                    ? `Updated "${currentCase?.title ?? "case"}".`
-                    : `Saved "${currentCase?.title ?? "case"}" to the library.`,
-                );
-              }
-            }}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-          >
-            <Save size={16} />
-            {currentCase?.status === "saved" ? "Update Saved Case" : "Save Case"}
-          </button>,
-        ]
-      : undefined;
+  const handleSaveCase = () => {
+    if (!currentCaseId) return;
+    confirmSaveCase(currentCaseId);
+    // Read fresh state so the backend copy carries everything the save just
+    // computed (including the recalculated confidenceStatus).
+    const nextState = useAppStore.getState();
+    const updatedCase = nextState.savedCases.find((item) => item.caseId === currentCaseId);
+    if (updatedCase) {
+      void backendApi.saveCase({
+        caseItem: updatedCase,
+        bites: nextState.workspaceBites[currentCaseId] ?? [],
+      });
+    }
+    pushToast(
+      currentCase?.status === "saved"
+        ? `Updated "${currentCase?.title ?? "case"}".`
+        : `Saved "${currentCase?.title ?? "case"}" to the library.`,
+    );
+  };
+  const handleSaveCaseRef = useRef(handleSaveCase);
+  handleSaveCaseRef.current = handleSaveCase;
 
-  const topBarActions = [globalModelPicker, ...(workspaceActions ?? [])].filter(Boolean);
+  // Ctrl+S (Cmd+S on Mac) saves/updates the open case while in the workspace.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        const storeState = useAppStore.getState();
+        if (storeState.currentView === "workspace" && storeState.currentCaseId) {
+          event.preventDefault();
+          handleSaveCaseRef.current();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const topBarActions = [globalModelPicker].filter(Boolean);
 
   if (credentialsConfigured === null) return null;
   if (!credentialsConfigured) {
@@ -489,6 +521,8 @@ const App = () => {
         onTogglePin={togglePinTab}
         topBarActions={topBarActions}
         onHelpOpen={() => setShowHelp(true)}
+        onOpenQuickAssist={() => setActiveUtilityModal("quick-assist")}
+        onOpenTranslation={() => setActiveUtilityModal("translation")}
         overlays={
           <>
             <ToastViewport toasts={toasts} onDismiss={(id) => setToasts((current) => current.filter((toast) => toast.id !== id))} />
@@ -524,13 +558,6 @@ const App = () => {
               return;
             }
             setCurrentView("sources", "Sources Management");
-            return;
-          }
-          if (view === "quick-aissist") {
-            if (!confirmLeaveUnsavedCase()) {
-              return;
-            }
-            setCurrentView("quick-aissist", "Quick AIssist");
             return;
           }
           if (view === "workspace" && currentCaseId) {
@@ -589,11 +616,8 @@ const App = () => {
             questionTypeOptions={questionTypeList}
             difficultyOptions={difficultyList}
             likelyIntentOptions={likelyIntentList}
-            sources={(recommendedSourcesByCase[currentCase.caseId] ?? []).map((item) => item.source)}
-            allSources={sourceItems}
             savedBites={savedBites}
             workspaceBites={workspaceBites[currentCase.caseId] ?? []}
-            selectedSourceIds={selectedSourceIds[currentCase.caseId] ?? []}
             matches={similarMatches.filter((match) => match.caseItem.caseId !== currentCase.caseId)}
             searchableCases={savedCases.filter((caseItem) => caseItem.status === "saved" && caseItem.caseId !== currentCase.caseId)}
             searchableBitesByCase={workspaceBites}
@@ -603,7 +627,8 @@ const App = () => {
             onOpenCase={handleSelectCase}
             onCaseFieldChange={(field, value) => updateCaseDetails(currentCase.caseId, { [field]: value })}
             onTagsChange={(tags) => updateCaseTags(currentCase.caseId, tags)}
-            onAddSource={(sourceId) => addSourceToWorkspace(currentCase.caseId, sourceId)}
+            onFillBiteFromSources={(biteId) => setSourceFillAnchor({ biteId, mode: "replace" })}
+            onSaveCase={handleSaveCase}
             onReuseSavedBite={(bite) => {
               addSavedBiteToWorkspace(currentCase.caseId, bite);
               pushToast(`Reused bite "${bite.biteTitle}".`);
@@ -644,16 +669,6 @@ const App = () => {
             onAssessConfidence={() => void assessConfidence(currentCase.caseId)}
             onCopyText={(text) => void copyText(text)}
             onSelectBite={selectBiteInBuilder}
-            onTranslateSource={(sourceId) => {
-              const source = sourceItems.find((item) => item.sourceId === sourceId);
-              if ((source?.sourceType === "quran" || source?.sourceType === "hadith") && source.authenticatedTranslation?.trim()) {
-                void copyText(source.authenticatedTranslation, "Copied stored English translation.");
-                return;
-              }
-              void openTranslationModal(sourceId).catch((error) => {
-                pushToast(error instanceof Error ? error.message : "Translation failed.", "info");
-              });
-            }}
             onTranslateBite={(bite) => void handleTranslateBite(bite)}
             onTranslateSavedBite={(bite) => void handleTranslateBite(bite)}
           />
@@ -684,16 +699,6 @@ const App = () => {
           />
         ) : null}
 
-        {currentView === "quick-aissist" ? (
-          <QuickAissistPanel
-            messages={quickAssistMessages}
-            isLoading={isQuickAssisting}
-            onSend={(prompt) => void handleQuickAssist(prompt)}
-            onClear={() => setQuickAssistMessages([])}
-            onCopy={(text) => void copyText(text, "Copied AI response.")}
-          />
-        ) : null}
-
         {currentView === "settings" ? (
           <AdminSettingsPanel
             onNotify={pushToast}
@@ -714,12 +719,60 @@ const App = () => {
           />
         ) : null}
       </AppShell>
+      {sourceFillAnchor && activeCase ? (
+        <UtilityModal
+          title="Insert from Saved Sources"
+          widthClassName="max-w-4xl"
+          onClose={() => {
+            if (translationModalOpen) return;
+            setSourceFillAnchor(null);
+          }}
+        >
+          <SourcePanel
+            embedded
+            sources={(recommendedSourcesByCase[activeCase.caseId] ?? []).map((item) => item.source)}
+            allSources={sourceItems}
+            selectedSourceIds={selectedSourceIds[activeCase.caseId] ?? []}
+            onAddSource={(sourceId) => {
+              const lastInsertedBiteId = insertSourceBitesAt(
+                activeCase.caseId,
+                sourceId,
+                sourceFillAnchor.biteId,
+                sourceFillAnchor.mode,
+              );
+              if (lastInsertedBiteId) {
+                setSourceFillAnchor({ biteId: lastInsertedBiteId, mode: "after" });
+              }
+            }}
+            onCopyText={(text, message) => void copyText(text, message)}
+            onTranslateSource={handleTranslateSource}
+          />
+        </UtilityModal>
+      ) : null}
+      {activeUtilityModal === "quick-assist" ? (
+        <UtilityModal title="Quick AIssist" onClose={() => setActiveUtilityModal(null)}>
+          <QuickAissistPanel
+            messages={quickAssistMessages}
+            isLoading={isQuickAssisting}
+            onSend={(prompt) => void handleQuickAssist(prompt)}
+            onClear={() => setQuickAssistMessages([])}
+            onCopy={(text) => void copyText(text, "Copied AI response.")}
+          />
+        </UtilityModal>
+      ) : null}
+      {activeUtilityModal === "translation" ? (
+        <UtilityModal title="AI Translation" widthClassName="max-w-md" onClose={() => setActiveUtilityModal(null)}>
+          <div className="px-4 py-8 text-center text-sm text-slate-600">
+            AI Translation tools are coming soon.
+          </div>
+        </UtilityModal>
+      ) : null}
       {showHelp ? <HelpModal onClose={() => setShowHelp(false)} /> : null}
-      {translationModalOpen && translationResult && currentCaseId ? (
+      {translationModalOpen && translationResult ? (
         <TranslationModal
           result={translationResult}
           isTranslating={isTranslating}
-          onInsert={(selectedText) => insertTranslationIntoBites(currentCaseId, selectedText)}
+          onInsert={currentCaseId ? (selectedText) => insertTranslationIntoBites(currentCaseId, selectedText) : undefined}
           onCopy={(selectedText) => void copyText(selectedText, "Copied translation.")}
           onCancel={closeTranslationModal}
           onReword={({ targetLanguageInput, targetLanguageCode, targetLanguageLabel }) =>

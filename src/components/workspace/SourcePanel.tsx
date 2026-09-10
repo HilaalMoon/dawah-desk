@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { SourceItem } from "@/types";
 import { classNames } from "@/utils/format";
+import { matchesSearchQuery } from "@/utils/search";
 
 type SourcePanelProps = {
   sources: SourceItem[];
@@ -12,6 +13,8 @@ type SourcePanelProps = {
   onAddSource: (sourceId: string) => void;
   onCopyText: (text: string, message?: string) => void;
   onTranslateSource: (sourceId: string) => void;
+  embedded?: boolean;
+  canAddToDraft?: boolean;
 };
 
 type SourceTab = "Quran" | "Sunnah" | "Scholarly" | "User";
@@ -27,13 +30,12 @@ const normalizeArabic = (value: string) =>
 
 const normalizeForSearch = (value: string) => normalizeArabic(value).toLowerCase().trim();
 
-const matchesQuery = (source: SourceItem, query: string) => {
-  if (!query.trim()) return true;
-  const haystack = normalizeForSearch(
+const matchesQuery = (source: SourceItem, query: string) =>
+  matchesSearchQuery(
     `${source.sourceTitle} ${source.excerpt} ${source.fullReference} ${source.authenticatedTranslation ?? ""} ${source.connectorName ?? ""}`,
+    query,
+    normalizeForSearch,
   );
-  return haystack.includes(normalizeForSearch(query));
-};
 
 const buildSourceCopyText = (source: SourceItem) =>
   `${source.sourceTitle}\n\n${source.excerpt}${
@@ -63,6 +65,8 @@ export const SourcePanel = ({
   onAddSource,
   onCopyText,
   onTranslateSource,
+  embedded = false,
+  canAddToDraft = true,
 }: SourcePanelProps) => {
   const [activeTab, setActiveTab] = useState<SourceTab>("Quran");
   const [sourceQuery, setSourceQuery] = useState("");
@@ -92,7 +96,10 @@ export const SourcePanel = ({
     <section
       id="workspace-source-panel"
       tabIndex={0}
-      className="panel flex h-full min-h-0 flex-col px-5 py-5 xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)]"
+      className={classNames(
+        "panel flex h-full min-h-0 flex-col px-5 py-5",
+        !embedded && "xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)]",
+      )}
     >
       <div className="-mx-5 sticky top-0 z-10 bg-white/95 px-5 pb-4 backdrop-blur">
         <SectionTitle
@@ -223,17 +230,19 @@ export const SourcePanel = ({
                             <MessageSquareQuote size={16} />
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => onAddSource(source.sourceId)}
-                          className={classNames(
-                            "inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium",
-                            selected ? "bg-emerald-50 text-emerald-700" : "bg-slate-900 text-white",
-                          )}
-                        >
-                          <PlusCircle size={16} />
-                          {selected ? "Added" : "Add to draft"}
-                        </button>
+                        {canAddToDraft ? (
+                          <button
+                            type="button"
+                            onClick={() => onAddSource(source.sourceId)}
+                            className={classNames(
+                              "inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium",
+                              selected ? "bg-emerald-50 text-emerald-700" : "bg-slate-900 text-white",
+                            )}
+                          >
+                            <PlusCircle size={16} />
+                            {selected ? "Added" : "Add to draft"}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
 

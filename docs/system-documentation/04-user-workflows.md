@@ -1,5 +1,11 @@
 # 04. User Workflows
 
+## App Shell (September 2026 UI revision)
+- the left sidebar collapses to an icon-only strip via the toggle in its header; the collapsed state persists in localStorage
+- global utilities (Quick AIssist, the AI Translation placeholder, and Help) are icon buttons in the top bar and open modal overlays — they are tools, not navigation destinations
+- the top bar publishes its measured height as a CSS variable so pinned elements (e.g. the response builder header) always stick just below it
+- all client-side search boxes (top-bar case search, workspace case search, saved-source filters, insert-from-sources modal) use multi-word matching: every word in the query must appear somewhere in the record, in any order
+
 ## Home
 Purpose:
 - show active case tabs
@@ -19,8 +25,9 @@ Purpose:
 - let the user ask quick model questions without leaving Da'wah Desk
 
 Current behavior:
+- opened from the sparkle icon in the top bar as a modal overlay, available on every screen (no longer a sidebar page)
 - one temporary conversation only
-- no saved chat history
+- no saved chat history across app restarts (the thread survives closing and reopening the modal within a session)
 - no multiple threads
 - no file or non-text upload
 - uses the current global active-model picker selection
@@ -53,18 +60,20 @@ Purpose:
 - draft bites
 - maintain confidence and traceability
 
-Main panels:
-- case context / cataloging
-- similar cases
-- source panel
-- response builder
-- confidence/support panel
+Layout (September 2026 revision):
+- a collapsible overview section holds case context / cataloging and similar cases
+- the response builder takes the full workspace width; bites display in a responsive grid (1 column narrow, 2 standard, 3 wide) and an expanded bite spans the full row
+- source selection is per bite: a blank bite (from `Add Bite`) offers `Insert from saved sources` (opens the saved-source modal targeted at that bite) and `Write content` (opens the bite editor directly)
+- in the saved-source modal, the first add fills the targeted blank bite in place; further adds insert directly after it; multi-paragraph manual sources split into numbered bites at that position
+- the confidence chip in the builder header always shows the case's overall support state (well supported / mixed support / AI-assisted / needs review / no bites yet) and opens the full confidence & support breakdown in a modal; the same aggregation is written to the case's `confidenceStatus` on save
+- `Save Case` / `Update Saved Case` sits at the right end of the builder header, next to the confidence chip; `Ctrl+S` (Cmd+S) triggers it while in the workspace
 
 Important rules:
 - sources come from the saved source library
 - translation is user-invoked
 - multiple short bites are allowed and encouraged
 - support status should stay visible and editable
+- copy and translate remain available on collapsed bites
 - save and update happen directly from the workspace instead of going through a separate confirmation page
 - unsaved workspace changes should warn before navigation away
 - each bite now includes an unlabeled conversation-use checkbox in the action column
@@ -138,6 +147,9 @@ Translation remains optional and user-invoked.
 - translation uses the currently selected active AI model
 - if the requested target language is the same as the original language, the AI is instructed to reword instead of translating
 - if AI translation fails or times out, the modal stays open and surfaces the real error in place
+- pressing Enter in the target-language box runs Translate/Reword
+- `Insert Into Draft` appears only when a case is open; translating and copying work without an open case
+- multi-paragraph translations insert as one bite per paragraph with numbered titles, matching how multi-paragraph sources land
 
 ## Save Review
 Purpose:

@@ -5,6 +5,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 import { CaseRecord, ResponseBite, SimilarCaseMatch } from "@/types";
 import { useAppStore } from "@/state/useAppStore";
 import { MATCH_ORDER, MatchLevel, titleMatchLevel } from "@/utils/titleMatch";
+import { matchesSearchQuery } from "@/utils/search";
 
 const EMPTY_BITES_BY_CASE: Record<string, ResponseBite[]> = {};
 
@@ -71,15 +72,12 @@ export const SimilarCasesPanel = ({
     });
   }, [matches, draftTitle, allSavedCases, searchableBitesByCase, scoredCaseIds]);
   const manualSearchMatches = useMemo(() => {
-    const query = manualSearch.trim().toLowerCase();
+    const query = manualSearch.trim();
     if (!query) return [];
 
     return searchableCases
       .filter((caseItem) => !scoredCaseIds.has(caseItem.caseId))
-      .filter((caseItem) => {
-        const haystack = `${caseItem.title} ${caseItem.originalQuestion}`.toLowerCase();
-        return haystack.includes(query);
-      })
+      .filter((caseItem) => matchesSearchQuery(`${caseItem.title} ${caseItem.originalQuestion}`, query))
       .map((caseItem) => ({
         caseItem,
         matchScore: 0,

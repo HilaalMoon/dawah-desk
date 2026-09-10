@@ -5,9 +5,9 @@ import { CaseContextPanel } from "@/components/workspace/CaseContextPanel";
 import { ConfidencePanel } from "@/components/workspace/ConfidencePanel";
 import { ResponseBuilderPanel } from "@/components/workspace/ResponseBuilderPanel";
 import { SimilarCasesPanel } from "@/components/workspace/SimilarCasesPanel";
-import { SourcePanel } from "@/components/workspace/SourcePanel";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-import { CaseRecord, ResponseBite, SaveMetadataSuggestion, SimilarCaseMatch, SourceItem, StructureSuggestion } from "@/types";
+import { UtilityModal } from "@/components/ui/UtilityModal";
+import { CaseRecord, ResponseBite, SaveMetadataSuggestion, SimilarCaseMatch, StructureSuggestion } from "@/types";
 
 type ResearchWorkspaceProps = {
   caseItem: CaseRecord;
@@ -17,11 +17,8 @@ type ResearchWorkspaceProps = {
   questionTypeOptions: string[];
   difficultyOptions: string[];
   likelyIntentOptions: string[];
-  sources: SourceItem[];
-  allSources: SourceItem[];
   savedBites: ResponseBite[];
   workspaceBites: ResponseBite[];
-  selectedSourceIds: string[];
   matches: SimilarCaseMatch[];
   searchableCases: CaseRecord[];
   searchableBitesByCase: Record<string, ResponseBite[]>;
@@ -44,7 +41,8 @@ type ResearchWorkspaceProps = {
     value: string,
   ) => void;
   onTagsChange: (tags: string[]) => void;
-  onAddSource: (sourceId: string) => void;
+  onFillBiteFromSources: (biteId: string) => void;
+  onSaveCase: () => void;
   onReuseSavedBite: (bite: ResponseBite) => void;
   onUpdateBite: (biteId: string, changes: Partial<ResponseBite>) => void;
   onAddBite: () => void;
@@ -56,7 +54,6 @@ type ResearchWorkspaceProps = {
   onAssessConfidence: () => void;
   onCopyText: (text: string, message?: string) => void;
   onSelectBite: (biteId: string) => void;
-  onTranslateSource: (sourceId: string) => void;
   onTranslateBite: (bite: ResponseBite) => void;
   onTranslateSavedBite: (bite: ResponseBite) => void;
 };
@@ -69,11 +66,8 @@ export const ResearchWorkspace = ({
   questionTypeOptions,
   difficultyOptions,
   likelyIntentOptions,
-  sources,
-  allSources,
   savedBites,
   workspaceBites,
-  selectedSourceIds,
   matches,
   searchableCases,
   searchableBitesByCase,
@@ -83,7 +77,8 @@ export const ResearchWorkspace = ({
   onOpenCase,
   onCaseFieldChange,
   onTagsChange,
-  onAddSource,
+  onFillBiteFromSources,
+  onSaveCase,
   onReuseSavedBite,
   onUpdateBite,
   onAddBite,
@@ -95,7 +90,6 @@ export const ResearchWorkspace = ({
   onAssessConfidence,
   onCopyText,
   onSelectBite,
-  onTranslateSource,
   onTranslateBite,
   onTranslateSavedBite,
 }: ResearchWorkspaceProps) => {
@@ -106,6 +100,7 @@ export const ResearchWorkspace = ({
     return stored === null ? true : stored === "open";
   };
   const [workspaceOverviewOpen, setWorkspaceOverviewOpen] = useState(() => readWorkspaceOverviewState(caseItem.caseId));
+  const [confidenceModalOpen, setConfidenceModalOpen] = useState(false);
 
   useEffect(() => {
     setWorkspaceOverviewOpen(readWorkspaceOverviewState(caseItem.caseId));
@@ -187,37 +182,44 @@ export const ResearchWorkspace = ({
         ) : null}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr,1.2fr,0.8fr] xl:items-start">
-        <SourcePanel
-          sources={sources}
-          allSources={allSources}
-          selectedSourceIds={selectedSourceIds}
-          onAddSource={onAddSource}
-          onCopyText={onCopyText}
-          onTranslateSource={onTranslateSource}
-        />
-        <ResponseBuilderPanel
-          caseItem={caseItem}
-          bites={workspaceBites}
-          structureSuggestions={structureSuggestions}
-          isGeneratingStructure={isGeneratingStructure}
-          onAddBite={onAddBite}
-          onGenerateStructure={onGenerateStructure}
-          onClearSuggestions={onClearSuggestions}
-          onMoveBite={onMoveBite}
-          onUpdateBite={onUpdateBite}
-          onRemoveBite={onRemoveBite}
-          onAcceptSuggestion={onAcceptSuggestion}
-          onCopyBite={(bite) =>
-            onCopyText(
-              bite.structuredSourceLayout === "split-source" ? bite.sourcePrimaryText ?? bite.biteText : bite.biteText,
-            )
-          }
-          onTranslateBite={onTranslateBite}
-          onCopyBiteTafsir={(bite) => onCopyText(bite.sourceTafsirText ?? "", "Copied tafsir note.")}
-        />
-        <ConfidencePanel bites={workspaceBites} onAssess={onAssessConfidence} onSelectBite={onSelectBite} />
-      </div>
+      <ResponseBuilderPanel
+        caseItem={caseItem}
+        bites={workspaceBites}
+        structureSuggestions={structureSuggestions}
+        isGeneratingStructure={isGeneratingStructure}
+        onOpenConfidence={() => setConfidenceModalOpen(true)}
+        onFillFromSources={onFillBiteFromSources}
+        onSaveCase={onSaveCase}
+        onAddBite={onAddBite}
+        onGenerateStructure={onGenerateStructure}
+        onClearSuggestions={onClearSuggestions}
+        onMoveBite={onMoveBite}
+        onUpdateBite={onUpdateBite}
+        onRemoveBite={onRemoveBite}
+        onAcceptSuggestion={onAcceptSuggestion}
+        onCopyBite={(bite) =>
+          onCopyText(
+            bite.structuredSourceLayout === "split-source" ? bite.sourcePrimaryText ?? bite.biteText : bite.biteText,
+          )
+        }
+        onTranslateBite={onTranslateBite}
+        onCopyBiteTafsir={(bite) => onCopyText(bite.sourceTafsirText ?? "", "Copied tafsir note.")}
+      />
+
+      {confidenceModalOpen ? (
+        <UtilityModal title="Confidence / Support" onClose={() => setConfidenceModalOpen(false)}>
+          <ConfidencePanel
+            embedded
+            bites={workspaceBites}
+            onAssess={onAssessConfidence}
+            onSelectBite={(biteId) => {
+              // Close the modal first so the scroll target is not hidden behind the overlay.
+              setConfidenceModalOpen(false);
+              window.setTimeout(() => onSelectBite(biteId), 80);
+            }}
+          />
+        </UtilityModal>
+      ) : null}
     </div>
   );
 };

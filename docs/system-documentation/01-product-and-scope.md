@@ -55,8 +55,9 @@ The current baseline is a working V1 with:
 - `Workspace`
 - `Case Library`
 - `Sources`
-- `Quick AIssist`
 - `Settings`
+
+`Quick AIssist` and the `AI Translation` placeholder are top-bar utility modals available from every screen, not navigation areas.
 
 ## Current Home Priorities
 The Home screen now emphasizes:

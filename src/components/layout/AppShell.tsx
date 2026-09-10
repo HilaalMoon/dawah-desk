@@ -5,15 +5,17 @@ import { TopBar } from "@/components/layout/TopBar";
 import { ActiveCaseTab, CaseRecord } from "@/types";
 
 type AppShellProps = {
-  currentView: "home" | "new-case" | "workspace" | "library" | "case-detail" | "save-review" | "sources" | "settings" | "quick-aissist";
+  currentView: "home" | "new-case" | "workspace" | "library" | "case-detail" | "save-review" | "sources" | "settings";
   title: string;
   searchTerm: string;
   onSearch: (term: string) => void;
   searchMatches: CaseRecord[];
   onOpenSearchCase: (caseId: string) => void;
-  onNavigate: (view: "home" | "new-case" | "workspace" | "library" | "sources" | "settings" | "quick-aissist") => void;
+  onNavigate: (view: "home" | "new-case" | "workspace" | "library" | "sources" | "settings") => void;
   topBarActions?: ReactNode;
   onHelpOpen: () => void;
+  onOpenQuickAssist: () => void;
+  onOpenTranslation: () => void;
   activeTabs: ActiveCaseTab[];
   cases: CaseRecord[];
   currentCaseId: string | null;
@@ -35,6 +37,8 @@ export const AppShell = ({
   onNavigate,
   topBarActions,
   onHelpOpen,
+  onOpenQuickAssist,
+  onOpenTranslation,
   activeTabs,
   cases,
   currentCaseId,
@@ -57,6 +61,8 @@ export const AppShell = ({
           onOpenSearchCase={onOpenSearchCase}
           actions={topBarActions}
           onHelpOpen={onHelpOpen}
+          onOpenQuickAssist={onOpenQuickAssist}
+          onOpenTranslation={onOpenTranslation}
           activeTabs={activeTabs}
           cases={cases}
           currentCaseId={currentCaseId}

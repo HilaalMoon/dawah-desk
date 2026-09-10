@@ -2,11 +2,13 @@ import { AlertTriangle, CheckCircle2, Link2, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { ResponseBite } from "@/types";
+import { classNames } from "@/utils/format";
 
 type ConfidencePanelProps = {
   bites: ResponseBite[];
   onAssess: () => void;
   onSelectBite: (biteId: string) => void;
+  embedded?: boolean;
 };
 
 const supportTone = (status: ResponseBite["supportStatus"]) => {
@@ -33,7 +35,7 @@ const priorityScore: Record<ResponseBite["supportStatus"], number> = {
   "direct-source": 4,
 };
 
-export const ConfidencePanel = ({ bites, onAssess, onSelectBite }: ConfidencePanelProps) => {
+export const ConfidencePanel = ({ bites, onAssess, onSelectBite, embedded = false }: ConfidencePanelProps) => {
   const direct = bites.filter((bite) => bite.supportStatus === "direct-source").length;
   const translated = bites.filter((bite) => bite.translationUsed).length;
   const aiAssisted = bites.filter((bite) => bite.aiAssisted).length;
@@ -47,7 +49,10 @@ export const ConfidencePanel = ({ bites, onAssess, onSelectBite }: ConfidencePan
   return (
     <section
       tabIndex={0}
-      className="panel flex h-full min-h-0 flex-col px-5 py-5 xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)]"
+      className={classNames(
+        "panel flex h-full min-h-0 flex-col px-5 py-5",
+        !embedded && "xl:sticky xl:top-28 xl:max-h-[calc(100vh-8rem)]",
+      )}
     >
       <div className="-mx-5 sticky top-0 z-10 bg-white/95 px-5 pb-4 backdrop-blur">
         <SectionTitle

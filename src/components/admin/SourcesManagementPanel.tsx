@@ -19,6 +19,7 @@ import { SourceItem } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { downloadCsv } from "@/utils/csv";
 import { classNames } from "@/utils/format";
+import { matchesSearchQuery } from "@/utils/search";
 
 type SourcesManagementPanelProps = {
   sourceLibrary: SourceItem[];
@@ -394,13 +395,14 @@ export const SourcesManagementPanel = ({
   );
 
   const filteredLibrary = useMemo(() => {
-    const query = libraryQuery.trim().toLowerCase();
+    const query = libraryQuery.trim();
     return sourceLibrary.filter((source) => {
       const matchesText =
         !query ||
-        `${source.sourceTitle} ${source.excerpt} ${source.fullReference} ${source.authenticatedTranslation ?? ""} ${source.tafsirText ?? ""} ${source.tafsirResourceName ?? ""} ${source.connectorName ?? ""}`
-          .toLowerCase()
-          .includes(query);
+        matchesSearchQuery(
+          `${source.sourceTitle} ${source.excerpt} ${source.fullReference} ${source.authenticatedTranslation ?? ""} ${source.tafsirText ?? ""} ${source.tafsirResourceName ?? ""} ${source.connectorName ?? ""}`,
+          query,
+        );
       const matchesType = librarySourceType === "all" || source.sourceType === librarySourceType;
       const connectorValue = source.connectorId ?? (source.sourceOrigin === "manual" ? "manual" : "seed");
       const matchesConnector = libraryConnectorFilter === "all" || connectorValue === libraryConnectorFilter;
