@@ -95,7 +95,7 @@ const KeyConcepts = () => (
     </AiFeatureBox>
     <div>
       <p className="font-semibold text-slate-900">Support status</p>
-      <p className="mt-1">Every bite shows where its content comes from — Direct source, Translated source, AI assisted, Weak support, or Missing support. This distinction is always visible so you always know how much to trust each bite.</p>
+      <p className="mt-1">Every bite shows where its content comes from — Direct source, Translated source, AI assisted, Weak support, or Missing support. This distinction is always visible so you always know how much to trust each bite. The coloured chip at the top of the Response Builder summarises the whole case — green means well supported, amber means mixed or AI-assisted, red means something needs review — and clicking it opens the full support breakdown.</p>
       <div className="mt-2">
         <AiFeatureBox name="AI assisted">
           AI assisted — drafted with AI help, needs human review.
