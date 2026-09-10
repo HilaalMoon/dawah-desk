@@ -13,6 +13,7 @@ import { UtilityModal } from "@/components/ui/UtilityModal";
 import { ToastItem, ToastViewport } from "@/components/ui/ToastViewport";
 import { AppShell } from "@/components/layout/AppShell";
 import { NewCaseForm } from "@/components/new-case/NewCaseForm";
+import { AiTranslationUtility } from "@/components/translation/AiTranslationUtility";
 import { TranslationModal } from "@/components/translation/TranslationModal";
 import { ResearchWorkspace } from "@/components/workspace/ResearchWorkspace";
 import { SourcePanel } from "@/components/workspace/SourcePanel";
@@ -761,10 +762,24 @@ const App = () => {
         </UtilityModal>
       ) : null}
       {activeUtilityModal === "translation" ? (
-        <UtilityModal title="AI Translation" widthClassName="max-w-md" onClose={() => setActiveUtilityModal(null)}>
-          <div className="px-4 py-8 text-center text-sm text-slate-600">
-            AI Translation tools are coming soon.
-          </div>
+        <UtilityModal
+          title="AI Translation"
+          widthClassName="max-w-4xl"
+          onClose={() => {
+            if (translationModalOpen) return;
+            setActiveUtilityModal(null);
+          }}
+        >
+          <AiTranslationUtility
+            sources={sourceItems}
+            onTranslateText={(text) =>
+              void openTranslationForText(text, "AI Translation", [], true).catch((error) => {
+                pushToast(error instanceof Error ? error.message : "Translation failed.", "info");
+              })
+            }
+            onCopyText={(text, message) => void copyText(text, message)}
+            onTranslateSource={handleTranslateSource}
+          />
         </UtilityModal>
       ) : null}
       {showHelp ? <HelpModal onClose={() => setShowHelp(false)} /> : null}

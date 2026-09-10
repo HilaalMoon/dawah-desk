@@ -62,7 +62,7 @@ const QuickStart = () => (
       <p>AI features available in this workflow:</p>
       <AiFeatureBox name="Suggest Classification">in New Case</AiFeatureBox>
       <AiFeatureBox name="Suggest Structure">in the Workspace</AiFeatureBox>
-      <AiFeatureBox name="Translate">on individual bites in the Workspace</AiFeatureBox>
+      <AiFeatureBox name="Translate">on bites and sources in the Workspace, and from the languages icon in the top bar for any text</AiFeatureBox>
     </div>
   </div>
 );
@@ -91,7 +91,7 @@ const KeyConcepts = () => (
       <p className="mt-1">The Sources menu gives you direct access to Quran.com and Sunnah.com — the same authenticated sources da'ees use and trust. You can search for verses and hadiths by keyword, retrieve the Arabic text with translation, and save them to your library in one step. No copy-pasting between browser tabs. No losing track of references. This works without AI and is one of the most valuable features in the app.</p>
     </div>
     <AiFeatureBox name="Translation">
-      If AI is connected, you can translate any bite into another language directly from the Workspace. Click the translate button on a bite, choose your target language, and the AI produces a translation for your review. You decide whether to keep it. Translation is never automatic. For Quran and Sunnah sources, stored English translations are used directly — no AI translation needed.
+      If AI is connected, you can translate any bite into another language directly from the Workspace. Click the translate button on a bite, choose your target language, and the AI produces a translation for your review. You decide whether to keep it. Translation is never automatic. For Quran and Sunnah sources, stored English translations are used directly — no AI translation needed. You can also open AI Translation any time from the languages icon in the top bar to translate pasted text or a saved source — no case needed.
     </AiFeatureBox>
     <div>
       <p className="font-semibold text-slate-900">Support status</p>

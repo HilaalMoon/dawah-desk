@@ -57,7 +57,7 @@ The current baseline is a working V1 with:
 - `Sources`
 - `Settings`
 
-`Quick AIssist` and the `AI Translation` placeholder are top-bar utility modals available from every screen, not navigation areas.
+`Quick AIssist` and `AI Translation` are top-bar utility modals available from every screen, not navigation areas.
 
 ## Current Home Priorities
 The Home screen now emphasizes:
