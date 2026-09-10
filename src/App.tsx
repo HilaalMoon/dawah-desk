@@ -13,7 +13,6 @@ import { UtilityModal } from "@/components/ui/UtilityModal";
 import { ToastItem, ToastViewport } from "@/components/ui/ToastViewport";
 import { AppShell } from "@/components/layout/AppShell";
 import { NewCaseForm } from "@/components/new-case/NewCaseForm";
-import { AiTranslationUtility } from "@/components/translation/AiTranslationUtility";
 import { TranslationModal } from "@/components/translation/TranslationModal";
 import { ResearchWorkspace } from "@/components/workspace/ResearchWorkspace";
 import { SourcePanel } from "@/components/workspace/SourcePanel";
@@ -100,7 +99,11 @@ const App = () => {
   const [quickAssistMessages, setQuickAssistMessages] = useState<QuickAssistMessage[]>([]);
   const [isQuickAssisting, setIsQuickAssisting] = useState(false);
   const [classificationError, setClassificationError] = useState<string | null>(null);
-  const [activeUtilityModal, setActiveUtilityModal] = useState<"quick-assist" | "translation" | null>(null);
+  const [activeUtilityModal, setActiveUtilityModal] = useState<"quick-assist" | null>(null);
+  // True when the translation window was opened from the top-bar AI Translation
+  // button: the original-text box becomes typeable and Insert Into Draft is
+  // hidden even when a case is open.
+  const [isUtilityTranslation, setIsUtilityTranslation] = useState(false);
   // When set, the saved-sources modal is open, targeting a bite in the builder.
   // "replace" fills the blank bite it was opened from; after the first insert the
   // anchor advances with mode "after" so further adds land right after it.
@@ -169,6 +172,7 @@ const App = () => {
     }
 
     try {
+      setIsUtilityTranslation(false);
       await openTranslationForText(bite.biteText, bite.biteTitle, bite.sourceLinks, bite.aiAssisted, {
         executeNow: false,
       });
@@ -230,6 +234,7 @@ const App = () => {
       void copyText(source.authenticatedTranslation, "Copied stored English translation.");
       return;
     }
+    setIsUtilityTranslation(false);
     void openTranslationModal(sourceId).catch((error) => {
       pushToast(error instanceof Error ? error.message : "Translation failed.", "info");
     });
@@ -523,7 +528,10 @@ const App = () => {
         topBarActions={topBarActions}
         onHelpOpen={() => setShowHelp(true)}
         onOpenQuickAssist={() => setActiveUtilityModal("quick-assist")}
-        onOpenTranslation={() => setActiveUtilityModal("translation")}
+        onOpenTranslation={() => {
+          setIsUtilityTranslation(true);
+          void openTranslationForText("", "AI Translation", [], true);
+        }}
         overlays={
           <>
             <ToastViewport toasts={toasts} onDismiss={(id) => setToasts((current) => current.filter((toast) => toast.id !== id))} />
@@ -761,38 +769,22 @@ const App = () => {
           />
         </UtilityModal>
       ) : null}
-      {activeUtilityModal === "translation" ? (
-        <UtilityModal
-          title="AI Translation"
-          widthClassName="max-w-4xl"
-          onClose={() => {
-            if (translationModalOpen) return;
-            setActiveUtilityModal(null);
-          }}
-        >
-          <AiTranslationUtility
-            sources={sourceItems}
-            onTranslateText={(text) =>
-              void openTranslationForText(text, "AI Translation", [], true).catch((error) => {
-                pushToast(error instanceof Error ? error.message : "Translation failed.", "info");
-              })
-            }
-            onCopyText={(text, message) => void copyText(text, message)}
-            onTranslateSource={handleTranslateSource}
-          />
-        </UtilityModal>
-      ) : null}
       {showHelp ? <HelpModal onClose={() => setShowHelp(false)} /> : null}
       {translationModalOpen && translationResult ? (
         <TranslationModal
           result={translationResult}
           isTranslating={isTranslating}
-          onInsert={currentCaseId ? (selectedText) => insertTranslationIntoBites(currentCaseId, selectedText) : undefined}
+          editableOriginal={isUtilityTranslation}
+          onInsert={
+            currentCaseId && !isUtilityTranslation
+              ? (selectedText) => insertTranslationIntoBites(currentCaseId, selectedText)
+              : undefined
+          }
           onCopy={(selectedText) => void copyText(selectedText, "Copied translation.")}
           onCancel={closeTranslationModal}
-          onReword={({ targetLanguageInput, targetLanguageCode, targetLanguageLabel }) =>
+          onReword={({ originalText, targetLanguageInput, targetLanguageCode, targetLanguageLabel }) =>
             void openTranslationForText(
-              translationResult.originalText,
+              originalText,
               translationResult.sourceTitle ?? "Translation",
               translationResult.sourceLinks,
               Boolean(translationResult.aiAssisted),

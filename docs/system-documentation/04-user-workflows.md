@@ -3,7 +3,7 @@
 ## App Shell (September 2026 UI revision)
 - the left sidebar collapses to an icon-only strip via the toggle in its header; the collapsed state persists in localStorage
 - global utilities (Quick AIssist, AI Translation, and Help) are icon buttons in the top bar and open modal overlays — they are tools, not navigation destinations
-- the AI Translation utility translates pasted text or a saved source without an open case (the saved-source panel appears in browse mode: search, copy, translate — no Add to draft); the Translation window stacks on top and offers Insert Into Draft only when a case is open
+- the AI Translation utility opens the translation window directly with a typeable original-text box: paste or type text, set the target language (Enter translates), copy the result — no case needed, no Insert button, no source browsing (bites and sources have their own translate buttons)
 - the top bar publishes its measured height as a CSS variable so pinned elements (e.g. the response builder header) always stick just below it
 - all client-side search boxes (top-bar case search, workspace case search, saved-source filters, insert-from-sources modal) use multi-word matching: every word in the query must appear somewhere in the record, in any order
 
