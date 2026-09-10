@@ -1,7 +1,7 @@
 # 06. Operations And Update Protocol
 
 ## Current Version
-- app version: `1.2.3` (plus the September 2026 workspace UI revision, unreleased)
+- app version: `1.3.0`
 - documentation baseline date: `2026-09-10`
 
 ## How To Run Locally
